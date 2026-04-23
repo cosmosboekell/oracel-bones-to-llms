@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oracle Bones to LLMs</title>
+  <style>
+    :root{
+      --bg:#0b0b0c;
+      --panel:#141416;
+      --panel2:#1b1c1f;
+      --text:#f4efe6;
+      --muted:#b7b0a3;
+      --bone1:#e4d5b8;
+      --bone2:#ccb087;
+      --bone3:#a9875f;
+      --gold:#d9a86c;
+      --blue:#8db4ff;
+      --green:#9fe3b0;
+      --border:rgba(255,255,255,.08);
+      --shadow:0 16px 40px rgba(0,0,0,.28);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      font-family: Georgia, "Times New Roman", serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, #1b1a1a 0%, #0d0d0f 45%, #080809 100%);
+      min-height:100vh;
+    }
+
+    .wrap{
+      width:min(1150px, 94vw);
+      margin:0 auto;
+      padding:28px 0 56px;
+    }
+
+    .hero{
+      padding:8px 0 18px;
+    }
+
+    .eyebrow{
+      font-size:.78rem;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      color:var(--gold);
+      margin-bottom:10px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:clamp(2.2rem,4.8vw,3.8rem);
+      line-height:1.03;
+    }
+
+    .sub{
+      max-width:780px;
+      color:var(--muted);
+      line-height:1.6;
+      margin:0;
+    }
+
+    .topbar{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns:1.4fr .9fr;
+      gap:18px;
+    }
+
+    @media (max-width: 900px){
+      .topbar{grid-template-columns:1fr}
+    }
+
+    .card{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .question-card{
+      padding:18px;
+    }
+
+    .label{
+      display:block;
+      color:var(--muted);
+      font-size:.95rem;
+      margin-bottom:10px;
+    }
+
+    textarea{
+      width:100%;
+      min-height:120px;
+      resize:vertical;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:#0f1012;
+      color:var(--text);
+      padding:16px;
+      font:inherit;
+      outline:none;
+    }
+
+    textarea:focus{
+      border-color:rgba(217,168,108,.8);
+      box-shadow:0 0 0 3px rgba(217,168,108,.12);
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    button{
+      border:none;
+      border-radius:999px;
+      padding:11px 16px;
+      font:inherit;
+      cursor:pointer;
+      transition:.16s ease;
+    }
+
+    button:hover{transform:translateY(-1px)}
+    .primary{
+      background:var(--gold);
+      color:#23170e;
+      font-weight:700;
+    }
+    .secondary{
+      background:#2a2b2f;
+      color:var(--text);
+      border:1px solid var(--border);
+    }
+
+    .meta{
+      padding:18px;
+      display:grid;
+      gap:12px;
+      align-content:start;
+    }
+
+    .meta-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      line-height:1.5;
+      color:var(--muted);
+      font-size:.95rem;
+    }
+
+    .meta strong{color:var(--text)}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-top:18px;
+    }
+
+    @media (max-width: 900px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .panel{
+      min-height:650px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .panel-head{
+      padding:16px 18px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:1.18rem;
+    }
+
+    .tag{
+      font-size:.78rem;
+      color:var(--muted);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:5px 10px;
+      white-space:nowrap;
+    }
+
+    .panel-body{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      flex:1;
+    }
+
+    .status-line{
+      font-size:.85rem;
+      color:var(--muted);
+      min-height:1.2rem;
+    }
+
+    .bone-stage{
+      position:relative;
+      min-height:240px;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(255,255,255,.22), transparent 19%),
+        radial-gradient(circle at 75% 78%, rgba(255,255,255,.13), transparent 16%),
+        linear-gradient(135deg,var(--bone1),var(--bone2) 58%,var(--bone3));
+      border-radius:22px;
+      color:#3f2b18;
+      padding:24px;
+      overflow:hidden;
+      border:1px solid rgba(61,38,16,.16);
+    }
+
+    .bone-shape::before,
+    .bone-shape::after{
+      content:"";
+      position:absolute;
+      background:rgba(54,33,14,.3);
+      border-radius:999px;
+      height:2px;
+      transform-origin:center;
+      opacity:.2;
+    }
+    .bone-shape::before{
+      width:280px;
+      top:68px;
+      left:22px;
+      transform:rotate(18deg);
+    }
+    .bone-shape::after{
+      width:210px;
+      top:132px;
+      left:120px;
+      transform:rotate(-31deg);
+    }
+
+    .cracks{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .crack{
+      position:absolute;
+      height:2px;
+      background:rgba(62,39,18,.5);
+      border-radius:999px;
+      transform-origin:left center;
+      opacity:0;
+      transition:opacity .4s ease;
+    }
+
+    .cracks.show .crack{opacity:1}
+
+    .inscription{
+      position:relative;
+      z-index:2;
+      white-space:pre-line;
+      line-height:1.7;
+      font-size:1rem;
+      min-height:150px;
+    }
+
+    .block{
+      background:#111215;
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .mini{
+      color:var(--muted);
+      font-size:.78rem;
+      text-transform:uppercase;
+      letter-spacing:.09em;
+      margin-bottom:8px;
+    }
+
+    .verdict{
+      color:#f7d19e;
+      font-size:1.4rem;
+      margin:4px 0 10px;
+    }
+
+    .muted{color:var(--muted); line-height:1.6}
+
+    .llm-card{
+      background:linear-gradient(180deg,#101826,#121318);
+      border:1px solid rgba(141,180,255,.22);
+      border-radius:18px;
+      padding:18px;
+      min-height:240px;
+    }
+
+    .llm-label{
+      color:var(--blue);
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.09em;
+      margin-bottom:8px;
+    }
+
+    .response{
+      line-height:1.7;
+      min-height:165px;
+    }
+
+    .ratings{
+      display:grid;
+      gap:12px;
+      margin-top:auto;
+    }
+
+    .rating{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .rating-title{
+      color:var(--muted);
+      display:block;
+      margin-bottom:8px;
+      font-size:.92rem;
+    }
+
+    .choices{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      background:#2a2b2f;
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:8px 12px;
+      cursor:pointer;
+      font-size:.92rem;
+      transition:.15s ease;
+    }
+
+    .pill.active{
+      background:var(--green);
+      color:#112217;
+      border-color:transparent;
+      font-weight:700;
+    }
+
+    .reveal{
+      margin-top:18px;
+      display:none;
+      padding:18px;
+      line-height:1.7;
+    }
+
+    .reveal.show{display:block}
+
+    .score{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:10px 0 6px;
+    }
+
+    .score-chip{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:7px 12px;
+      color:var(--muted);
+      font-size:.9rem;
+    }
+
+    .foot{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.55;
+    }
+
+    .cite{
+      margin-top:12px;
+      font-size:.82rem;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Computation, Culture & Society</div>
+      <h1>Oracle Bones to LLMs</h1>
+      <p class="sub">
+        Ask one question. Receive two answers. One emerges through ritualized divination.
+        The other arrives as model-like synthesis. Then decide which feels wiser,
+        more trustworthy, more intelligent, and more useful.
+      </p>
+    </section>
+
+    <section class="topbar">
+      <div class="card question-card">
+        <label class="label" for="question">Enter a question about uncertainty, judgment, or the future.</label>
+        <textarea id="question" placeholder="Should I take this opportunity, or am I ignoring a hidden cost?"></textarea>
+        <div class="controls">
+          <button class="primary" id="generateBtn">Consult Both Systems</button>
+          <button class="secondary" id="sampleBtn">Use Sample Question</button>
+          <button class="secondary" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <aside class="card meta">
+        <div class="meta-box">
+          <strong>Framing</strong><br>
+          This compares two cultural technologies for producing interpretable answers under uncertainty.
+        </div>
+        <div class="meta-box">
+          <strong>Not the claim</strong><br>
+          Oracle bones were not “early AI.” The comparison is about authority, interpretation, and what kinds of outputs a culture learns to trust.
+        </div>
+        <div class="meta-box">
+          <strong>Question behind the project</strong><br>
+          Does “intelligence” belong to the machine, or to the style of answer we are trained to recognize as credible?
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <article class="card panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Consult the Bone</h2>
+          <span class="tag">Ritual / Inscription</span>
+        </div>
+        <div class="panel-body">
+          <div class="status-line" id="oracleStatus">Awaiting question.</div>
+          <div class="bone-stage bone-shape">
+            <div class="cracks" id="cracks"></div>
+            <div class="inscription" id="boneText">The diviner asks...
+Awaiting heat, crack, and inscription.</div>
+          </div>
+
+          <div class="block">
+            <div class="mini">Verdict</div>
+            <div class="verdict" id="oracleVerdict">—</div>
+            <div class="muted" id="oracleInterpretation">The sign has not yet been read.</div>
+          </div>
+
+          <div class="ratings" id="ratingsA"></div>
+        </div>
+      </article>
+
+      <article class="card panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Query the Model</h2>
+          <span class="tag">Statistical / Advisory</span>
+        </div>
+        <div class="panel-body">
+          <div class="status-line" id="llmStatus">Awaiting question.</div>
+          <div class="llm-card">
+            <div class="llm-label">Generated response</div>
+            <div class="response" id="llmText">The model is waiting for your question.</div>
+          </div>
+
+          <div class="block">
+            <div class="mini">Style</div>
+            <div class="muted">Fluent, synthetic, explanatory, and probabilistic.</div>
+          </div>
+
+          <div class="ratings" id="ratingsB"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card reveal" id="reveal">
+      <strong>Interpretive reveal</strong>
+      <div class="score" id="scoreRow"></div>
+      <div id="revealText"></div>
+      <div class="cite">
+        Historical note: Shang oracle bones were used in ritual divination and preserved early Chinese inscriptions.
+        Turing’s imitation game defines intelligence behaviorally through text exchange; recent scholarship argues large AI models are cultural and social technologies.
+      </div>
+    </section>
+
+    <p class="foot">
+      Built as a course artifact for thinking about whether machine intelligence is a neutral property,
+      or a culturally shaped judgment about what kinds of answers count as meaningful, credible, or wise.
+    </p>
+  </div>
+
+  <script>
+    const sampleQuestions = [
+      "Should I take this opportunity, or am I ignoring a hidden danger?",
+      "What am I failing to see in this conflict?",
+      "Is it wiser to move quickly or to wait?",
+      "Does this plan bring growth, or only motion?",
+      "Am I choosing from courage, fear, or vanity?"
+    ];
+
+    const ritualOpeners = [
+      "The diviner asks:",
+      "Crack made on the shell:",
+      "The inscription records the inquiry:",
+      "The bone was heated and the sign appeared:",
+      "The diviner marked the question:"
+    ];
+
+    const verdicts = [
+      "Auspicious.",
+      "Inauspicious.",
+      "The sign is mixed.",
+      "A delay is favorable.",
+      "The omen warns against haste.",
+      "What is sought is not yet settled.",
+      "The omen favors careful approach."
+    ];
+
+    const oracleImages = [
+      "There is movement, but its advantage is not equal in every direction.",
+      "What appears near at hand is less important than what gathers behind it.",
+      "A hidden cost follows an easy path.",
+      "What is delayed may ripen; what is forced may split.",
+      "The matter is not empty, but neither is it decided.",
+      "Gain is possible, though only with restraint.",
+      "What is requested may be granted, but not in the form expected.",
+      "The sign favors attention to timing over intensity.",
+      "There is danger in confidence without examination.",
+      "The pattern suggests that what is omitted will matter more than what is declared."
+    ];
+
+    const oracleClosers = [
+      "The crack does not forbid action, but it narrows the proper moment.",
+      "The sign points toward caution, not paralysis.",
+      "What is favorable now may become harmful if pursued too far.",
+      "The answer is not no; it is not yet.",
+      "The pattern reveals imbalance more than disaster.",
+      "The omen speaks against pride disguised as certainty."
+    ];
+
+    const llmOpeners = [
+      "This sounds like a situation with real uncertainty and competing priorities.",
+      "A useful way to approach this question is to separate urgency from importance.",
+      "The key issue may not be whether you can act, but whether the conditions actually support action.",
+      "There are probably multiple valid interpretations here, so it helps to clarify what risk matters most.",
+      "This question seems to involve both judgment and timing, not just choice."
+    ];
+
+    const llmBodies = [
+      "One possibility is that the opportunity is real, but your current view may be missing second-order consequences.",
+      "It may help to treat this less as a yes-or-no question and more as a question of sequencing, readiness, and downside exposure.",
+      "If you feel pressure to move quickly, that may be a signal to slow down long enough to test your assumptions.",
+      "A strong next step would be to identify what evidence would change your mind, rather than relying only on momentum or intuition.",
+      "The most important hidden variable may be whether you are responding to the situation itself or to the story you want it to confirm."
+    ];
+
+    const llmClosers = [
+      "A low-risk experiment or partial commitment may tell you more than a decisive leap.",
+      "If you can reduce the stakes of the next move, you may get clarity without overcommitting.",
+      "In practical terms, slowing the decision slightly may increase the quality of the decision substantially.",
+      "You do not need total certainty, but you do need a clearer relationship between risk, timing, and values.",
+      "The best answer may be neither full speed nor total withdrawal, but a controlled test."
+    ];
+
+    const ratingPrompts = [
+      "Which feels more trustworthy?",
+      "Which feels more meaningful?",
+      "Which feels more intelligent?",
+      "Which would you actually use?"
+    ];
+
+    const ratingState = {};
+
+    function randomItem(arr){
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function containsAny(text, words){
+      return words.some(w => text.includes(w));
+    }
+
+    function moodFor(question){
+      const q = question.toLowerCase();
+      if (containsAny(q, ["love","relationship","friend","marriage","heart"])) {
+        return {
+          oracle:"What binds also obscures. What feels immediate may not be deepest.",
+          llm:"Relationship questions usually become clearer when you separate feeling, pattern, and expectation."
+        };
+      }
+      if (containsAny(q, ["job","career","work","promotion","offer"])) {
+        return {
+          oracle:"Advancement is visible, but the path beneath it may be uneven.",
+          llm:"Career choices benefit from distinguishing status, fit, growth, and hidden cost."
+        };
+      }
+      if (containsAny(q, ["money","cost","buy","debt","price"])) {
+        return {
+          oracle:"What seems light now may return with weight later.",
+          llm:"Financial decisions look different when you model downside, not just upside."
+        };
+      }
+      if (containsAny(q, ["move","leave","travel","city","relocate"])) {
+        return {
+          oracle:"Movement is possible, but place changes more than distance.",
+          llm:"A move is rarely only logistical; it often changes routine, identity, and support structure."
+        };
+      }
+      return {
+        oracle: randomItem(oracleImages),
+        llm: randomItem(llmBodies)
+      };
+    }
+
+    function buildOracle(question){
+      const mood = moodFor(question);
+      const opener = randomItem(ritualOpeners);
+      const verdict = randomItem(verdicts);
+      const closer = randomItem(oracleClosers);
+      return {
+        verdict,
+        inscription: `${opener}\n“${question}”\n\nThe crack answers:\n${mood.oracle}`,
+        interpretation: `${mood.oracle} ${closer}`
+      };
+    }
+
+    function buildLLM(question){
+      const mood = moodFor(question);
+      return `${randomItem(llmOpeners)} ${mood.llm} ${randomItem(llmClosers)}`;
+    }
+
+    function sleep(ms){
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function typeText(el, text, speed=18){
+      el.textContent = "";
+      for (let i=0; i<text.length; i++){
+        el.textContent += text[i];
+        await sleep(speed);
+      }
+    }
+
+    function buildCracks(){
+      const cracks = document.getElementById("cracks");
+      cracks.innerHTML = "";
+      const config = [
+        {top:54,left:34,width:240,rot:18},
+        {top:96,left:120,width:170,rot:-28},
+        {top:142,left:76,width:130,rot:34},
+        {top:110,left:30,width:90,rot:-8},
+        {top:168,left:160,width:110,rot:-45}
+      ];
+      config.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "crack";
+        div.style.top = c.top + "px";
+        div.style.left = c.left + "px";
+        div.style.width = c.width + "px";
+        div.style.transform = `rotate(${c.rot}deg)`;
+        cracks.appendChild(div);
+      });
+    }
+
+    function renderRatings(){
+      const A = document.getElementById("ratingsA");
+      const B = document.getElementById("ratingsB");
+      A.innerHTML = "";
+      B.innerHTML = "";
+      ratingPrompts.forEach((prompt, idx) => {
+        ratingState[idx] = null;
+        A.appendChild(makeRating(prompt, idx));
+        B.appendChild(makeRating(prompt, idx));
+      });
+    }
+
+    function makeRating(prompt, idx){
+      const box = document.createElement("div");
+      box.className = "rating";
+      const title = document.createElement("span");
+      title.className = "rating-title";
+      title.textContent = prompt;
+      box.appendChild(title);
+
+      const choices = document.createElement("div");
+      choices.className = "choices";
+
+      ["Oracle","Model","Both / unclear"].forEach((label, i) => {
+        const btn = document.createElement("button");
+        btn.className = "pill";
+        btn.textContent = label;
+        btn.onclick = () => setChoice(idx, i === 0 ? "oracle" : i === 1 ? "llm" : "both");
+        choices.appendChild(btn);
+      });
+
+      box.appendChild(choices);
+      return box;
+    }
+
+    function setChoice(idx, val){
+      ratingState[idx] = val;
+      document.querySelectorAll(".rating").forEach((row, rowIndex) => {
+        if (rowIndex % ratingPrompts.length === idx) {
+          const pills = row.querySelectorAll(".pill");
+          pills.forEach(p => p.classList.remove("active"));
+          if (val === "oracle") pills[0].classList.add("active");
+          if (val === "llm") pills[1].classList.add("active");
+          if (val === "both") pills[2].classList.add("active");
+        }
+      });
+      maybeReveal();
+    }
+
+    function maybeReveal(){
+      const done = Object.values(ratingState).every(v => v !== null);
+      const reveal = document.getElementById("reveal");
+      if (!done){
+        reveal.classList.remove("show");
+        return;
+      }
+
+      const counts = {oracle:0,llm:0,both:0};
+      Object.values(ratingState).forEach(v => counts[v]++);
+
+      const scoreRow = document.getElementById("scoreRow");
+      scoreRow.innerHTML = "";
+      [
+        `Oracle chosen: ${counts.oracle}/4`,
+        `Model chosen: ${counts.llm}/4`,
+        `Both / unclear: ${counts.both}/4`
+      ].forEach(t => {
+        const chip = document.createElement("div");
+        chip.className = "score-chip";
+        chip.textContent = t;
+        scoreRow.appendChild(chip);
+      });
+
+      let summary = "";
+      if (counts.oracle > counts.llm) {
+        summary = "You leaned toward the oracle-style system. That suggests ambiguity, compression, ritual framing, or symbolic authority registered for you as deeper or more trustworthy than fluent explanation. ";
+      } else if (counts.llm > counts.oracle) {
+        summary = "You leaned toward the model-style system. That suggests synthesis, clarity, and advisory fluency registered for you as more trustworthy or more intelligent. ";
+      } else {
+        summary = "Your choices were split. Neither ritual ambiguity nor explanatory fluency fully owned the category of intelligence for you. ";
+      }
+
+      summary += "Both systems transform uncertainty into interpretable output. One does so through inscription, omen, and ritualized interpretation; the other through statistical style and synthesized language. If one felt wiser, that may reflect your culture of trust as much as the machine itself.";
+
+      document.getElementById("revealText").textContent = summary;
+      reveal.classList.add("show");
+    }
+
+    async function generate(){
+      const q = document.getElementById("question").value.trim();
+      if (!q) return;
+
+      const oracle = buildOracle(q);
+      const llm = buildLLM(q);
+
+      const oracleStatus = document.getElementById("oracleStatus");
+      const llmStatus = document.getElementById("llmStatus");
+      const boneText = document.getElementById("boneText");
+      const llmText = document.getElementById("llmText");
+      const cracks = document.getElementById("cracks");
+
+      document.getElementById("oracleVerdict").textContent = "—";
+      document.getElementById("oracleInterpretation").textContent = "Reading the sign...";
+      document.getElementById("reveal").classList.remove("show");
+      renderRatings();
+
+      oracleStatus.textContent = "Heating shell...";
+      llmStatus.textContent = "Running model...";
+      boneText.textContent = "The diviner asks...\nAwaiting crack.";
+      llmText.textContent = "";
+
+      cracks.classList.remove("show");
+      buildCracks();
+
+      await sleep(500);
+      cracks.classList.add("show");
+      await sleep(500);
+      oracleStatus.textContent = "Inscribing omen...";
+      await typeText(boneText, oracle.inscription, 16);
+      document.getElementById("oracleVerdict").textContent = oracle.verdict;
+      document.getElementById("oracleInterpretation").textContent = oracle.interpretation;
+      oracleStatus.textContent = "Omen read.";
+
+      await sleep(250);
+      llmStatus.textContent = "Synthesizing response...";
+      await typeText(llmText, llm, 12);
+      llmStatus.textContent = "Response ready.";
+    }
+
+    function resetAll(){
+      document.getElementById("question").value = "";
+      document.getElementById("oracleStatus").textContent = "Awaiting question.";
+      document.getElementById("llmStatus").textContent = "Awaiting question.";
+      document.getElementById("boneText").textContent = "The diviner asks...\nAwaiting heat, crack, and inscription.";
+      document.getElementById("llmText").textContent = "The model is waiting for your question.";
+      document.getElementById("oracleVerdict").textContent = "—";
+      document.getElementById("oracleInterpretation").textContent = "The sign has not yet been read.";
+      document.getElementById("cracks").classList.remove("show");
+      document.getElementById("ratingsA").innerHTML = "";
+      document.getElementById("ratingsB").innerHTML = "";
+      document.getElementById("reveal").classList.remove("show");
+      Object.keys(ratingState).forEach(k => delete ratingState[k]);
+    }
+
+    document.getElementById("generateBtn").onclick = generate;
+    document.getElementById("sampleBtn").onclick = () => {
+      document.getElementById("question").value = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+      generate();
+    };
+    document.getElementById("resetBtn").onclick = resetAll;
+
+    buildCracks();
+    renderRatings();
+  </script>
+</body>
+</html>
